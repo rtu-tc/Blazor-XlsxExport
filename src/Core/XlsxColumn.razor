@@ -1,0 +1,41 @@
+﻿@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+
+@implements IDisposable
+
+@code {
+    [CascadingParameter]
+    public XlsxSheet<TItem>? Sheet { get; set; }
+
+    /// <summary>
+    /// Header cell
+    /// </summary>
+    [Parameter]
+    public string? Title { get; set; }
+    /// <summary>
+    /// Comment for cell, only strings is supported
+    /// </summary>
+    [Parameter]
+    public string? TitleComment { get; set; }
+
+    /// <summary>
+    /// Value, only strings is supported
+    /// </summary>
+    [Parameter]
+    public Func<TItem, string>? Value { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Sheet is null)
+        {
+            throw new InvalidOperationException($"{nameof(XlsxColumn<TItem>)} can be used only in child content of {nameof(XlsxSheet<TItem>)}");
+        }
+        Sheet.AddColumn(this);
+    }
+
+    public void Dispose()
+    {
+        Sheet?.AddColumn(this);
+    }
+}

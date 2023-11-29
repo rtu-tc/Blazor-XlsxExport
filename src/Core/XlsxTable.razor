@@ -1,0 +1,57 @@
+﻿@using ClosedXML.Excel;
+@using RtuTc.BlazorXlsxExport.Options;
+
+
+@if (ChildContent is not null)
+{
+    <CascadingValue Value="this">
+        @ChildContent((Generate, false))
+    </CascadingValue>
+}
+@code {
+    [Parameter]
+    public RenderFragment<(Func<Task> generate, bool isGenerating)>? ChildContent { get; set; }
+
+    [Parameter]
+    public string? Author { get; set; }
+    /// <summary>
+    /// Delay between operations to stay ui responsive
+    /// </summary>
+    [Parameter]
+    public TimeSpan Delay { get; set; } = TimeSpan.FromMilliseconds(10);
+    [Parameter]
+    public EventCallback<Stream> OnReportDone { get; set; }
+
+    private List<IXlsxSheet> sheets = new();
+
+    internal void AddSheet(IXlsxSheet sheet)
+    {
+        sheets.Add(sheet);
+    }
+    internal void RemoveSheet(IXlsxSheet sheet)
+    {
+        sheets.Remove(sheet);
+    }
+
+    internal async Task Generate()
+    {
+        using var workBook = new XLWorkbook();
+        if (Author is not null)
+        {
+            workBook.Properties.Author = Author;
+        }
+        await Task.Delay(TimeSpan.FromSeconds(0.5));
+
+        foreach (var sheet in sheets)
+        {
+            await sheet.AddSheetToWorkbook(workBook);
+            await Task.Delay(Delay);
+        }
+
+        using var stream = new MemoryStream();
+        workBook.SaveAs(stream);
+        stream.Position = 0;
+        await OnReportDone.InvokeAsync(stream);
+    }
+
+}

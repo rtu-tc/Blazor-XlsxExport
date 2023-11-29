@@ -1,0 +1,18 @@
+﻿@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+
+
+@using ClosedXML.Excel;
+
+@inherits XlsxSheetOption<TItem>
+
+@code {
+
+    [Parameter, EditorRequired]
+    public int ColumnsCount { get; set; }
+
+    internal override void ApplyOption(IXLWorksheet worksheet)
+    {
+        worksheet.SheetView.FreezeColumns(ColumnsCount);
+    }
+}

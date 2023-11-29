@@ -1,0 +1,107 @@
+﻿@using ClosedXML.Excel;
+@using RtuTc.BlazorXlsxExport.Options;
+@typeparam TItem
+
+@implements IDisposable
+
+@if (ChildContent is not null && Table is not null)
+{
+    <CascadingValue Value="this">
+        @ChildContent
+    </CascadingValue>
+}
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<TItem>? Data { get; set; }
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = "data";
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    [CascadingParameter]
+    public XlsxTable? Table { get; set; }
+
+    private List<XlsxColumn<TItem>> columns = new();
+    private List<XlsxSheetOption<TItem>> options = new();
+
+    private IXlsxWrapper wrapper;
+
+    private TimeSpan Delay => Table?.Delay ?? TimeSpan.FromMilliseconds(10);
+
+    public XlsxSheet()
+    {
+        wrapper = new IXlsxWrapper(this.AddSheetToWorkbook);
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Table is null)
+        {
+            throw new InvalidOperationException($"{nameof(XlsxSheet<TItem>)} can be used only in child content of {nameof(XlsxTable)}");
+        }
+        Table?.AddSheet(wrapper);
+    }
+
+    internal async Task AddSheetToWorkbook(XLWorkbook workbook)
+    {
+        if (Data is null)
+        {
+            throw new ArgumentNullException(nameof(Data), "Data is required to generate file");
+        }
+        var sheet = workbook.Worksheets.Add(XLHelper.CreateSafeSheetName(Name));
+        var columnIndex = 1;
+        var rowIndex = 1;
+        foreach (var column in columns)
+        {
+            var headerCell = sheet.Cell(rowIndex, columnIndex++);
+            headerCell.SetValue(column.Title);
+            var comment = column.TitleComment;
+            if (comment is not null)
+            {
+                headerCell.CreateComment().AddText(comment);
+            }
+        }
+        rowIndex++;
+        columnIndex = 1;
+        foreach (var row in Data)
+        {
+            foreach (var column in columns)
+            {
+                var cell = sheet.Cell(rowIndex, columnIndex++);
+                cell.SetValue(column.Value?.Invoke(row));
+            }
+            await Task.Delay(Delay);
+            columnIndex = 1;
+            rowIndex++;
+        }
+        await Task.Delay(Delay);
+
+        foreach (var option in options)
+        {
+            option.ApplyOption(sheet);
+        }
+    }
+
+    internal void AddColumn(XlsxColumn<TItem> column)
+    {
+        columns.Add(column);
+    }
+    internal void RemoveColumn(XlsxColumn<TItem> column)
+    {
+        columns.Remove(column);
+    }
+    internal void AddOption(XlsxSheetOption<TItem> option)
+    {
+        options.Add(option);
+    }
+    internal void RemoveOption(XlsxSheetOption<TItem> option)
+    {
+        options.Remove(option);
+    }
+
+    public void Dispose()
+    {
+        Table?.RemoveSheet(wrapper);
+    }
+}

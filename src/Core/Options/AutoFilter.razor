@@ -1,0 +1,17 @@
+﻿@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+
+
+@using ClosedXML.Excel;
+
+@inherits XlsxSheetOption<TItem>
+
+@code {
+    [Parameter]
+    public bool Use { get; set; } = true;
+
+    internal override void ApplyOption(IXLWorksheet worksheet)
+    {
+        worksheet.RangeUsed().SetAutoFilter(Use);
+    }
+}
