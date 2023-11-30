@@ -1,10 +1,6 @@
-﻿@typeparam TItem
-@attribute [CascadingTypeParameter(nameof(TItem))]
+﻿@using ClosedXML.Excel;
 
-
-@using ClosedXML.Excel;
-
-@inherits XlsxSheetOption<TItem>
+@inherits XlsxSheetOption
 
 @code {
 

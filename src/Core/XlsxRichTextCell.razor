@@ -1,0 +1,37 @@
+@using ClosedXML.Excel
+
+@inherits XlsxCellBase 
+@if (ChildContent is not null)
+{
+    <CascadingValue Value="this" IsFixed>
+        @ChildContent
+    </CascadingValue>
+}
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    
+    private readonly List<IXlsxRichText> xlsxReaches = new();
+
+    protected override ValueTask PlaceCellContent(IXLCell cell)
+    {
+        var text = cell.CreateRichText();
+
+        foreach (var xlsxReach in xlsxReaches)
+        {
+            xlsxReach.ApplyReachText(text);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
+    internal void AddReachText(IXlsxRichText reachText)
+    {
+        xlsxReaches.Add(reachText);
+    }
+    internal void RemoveReachText(IXlsxRichText reachText)
+    {
+        xlsxReaches.Remove(reachText);
+    }
+}

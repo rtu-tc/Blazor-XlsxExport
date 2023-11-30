@@ -1,0 +1,46 @@
+@using ClosedXML.Excel
+
+@implements IDisposable
+@implements IXlsxRichText
+
+
+@code {
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public XLColor? FontColor { get; set; } = XLColor.Black;
+    [Parameter]
+    public bool NoNewLine { get; set; }
+
+    [CascadingParameter]
+    public XlsxRichTextCell? Cell { get; set; }
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Cell?.AddReachText(this);
+    }
+
+    void IXlsxRichText.ApplyReachText(IXLRichText richStrings)
+    {
+        if (Value is not null)
+        {
+            var text = richStrings.AddText(Value);
+            if (FontColor is not null)
+            {
+                text.SetFontColor(FontColor);
+            }
+        }
+        if (!NoNewLine)
+        {
+            richStrings.AddNewLine();
+        }
+    }
+
+    public void Dispose()
+    {
+        Cell?.RemoveReachText(this);
+    }
+}

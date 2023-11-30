@@ -4,13 +4,15 @@
 
 @if (ChildContent is not null)
 {
-    <CascadingValue Value="this">
-        @ChildContent((Generate, false))
+    <CascadingValue Value="this" IsFixed>
+        <CascadingValue Value="reportProgressCounter" IsFixed>
+            @ChildContent((Generate, isGenerating, () => reportProgressCounter.ProgressPercent))
+        </CascadingValue>
     </CascadingValue>
 }
 @code {
     [Parameter]
-    public RenderFragment<(Func<Task> generate, bool isGenerating)>? ChildContent { get; set; }
+    public RenderFragment<(Func<Task> generate, bool isGenerating, Func<int> progressPercent)>? ChildContent { get; set; }
 
     [Parameter]
     public string? Author { get; set; }
@@ -22,8 +24,10 @@
     [Parameter]
     public EventCallback<Stream> OnReportDone { get; set; }
 
-    private List<IXlsxSheet> sheets = new();
 
+    private readonly ReportProgressCounter reportProgressCounter = new();
+    private List<IXlsxSheet> sheets = new();
+    private bool isGenerating;
     internal void AddSheet(IXlsxSheet sheet)
     {
         sheets.Add(sheet);
@@ -35,23 +39,31 @@
 
     internal async Task Generate()
     {
-        using var workBook = new XLWorkbook();
-        if (Author is not null)
+        isGenerating = true;
+        try
         {
-            workBook.Properties.Author = Author;
-        }
-        await Task.Delay(TimeSpan.FromSeconds(0.5));
+            using var workBook = new XLWorkbook();
+            if (Author is not null)
+            {
+                workBook.Properties.Author = Author;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(0.5));
 
-        foreach (var sheet in sheets)
+            foreach (var sheet in sheets)
+            {
+                await sheet.AddSheetToWorkbook(workBook);
+                await Task.Delay(Delay);
+            }
+
+            using var stream = new MemoryStream();
+            workBook.SaveAs(stream);
+            stream.Position = 0;
+            await OnReportDone.InvokeAsync(stream);
+        }
+        finally
         {
-            await sheet.AddSheetToWorkbook(workBook);
-            await Task.Delay(Delay);
+            isGenerating = false;
         }
-
-        using var stream = new MemoryStream();
-        workBook.SaveAs(stream);
-        stream.Position = 0;
-        await OnReportDone.InvokeAsync(stream);
     }
 
 }

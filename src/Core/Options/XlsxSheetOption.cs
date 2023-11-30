@@ -3,11 +3,11 @@
 using Microsoft.AspNetCore.Components;
 
 namespace RtuTc.BlazorXlsxExport.Options;
-[CascadingTypeParameter(nameof(TItem))]
-public abstract class XlsxSheetOption<TItem> : ComponentBase, IDisposable
+
+public abstract class XlsxSheetOption : ComponentBase, IDisposable
 {
     [CascadingParameter]
-    public XlsxSheet<TItem>? Sheet { get; set; }
+    public XlsxSheet? Sheet { get; set; }
 
     internal abstract void ApplyOption(IXLWorksheet worksheet);
 
@@ -16,7 +16,7 @@ public abstract class XlsxSheetOption<TItem> : ComponentBase, IDisposable
         base.OnInitialized();
         if (Sheet is null)
         {
-            throw new InvalidOperationException($"{nameof(XlsxSheetOption<TItem>)} can be used only in child content of {nameof(XlsxSheet<TItem>)}");
+            throw new InvalidOperationException($"{nameof(XlsxSheetOption)} can be used only in child content of {nameof(XlsxSheet)}");
         }
         Sheet.AddOption(this);
     }

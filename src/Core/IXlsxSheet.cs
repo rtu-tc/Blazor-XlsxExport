@@ -8,20 +8,7 @@ namespace RtuTc.BlazorXlsxExport;
 /// </summary>
 internal interface IXlsxSheet
 {
+    string Name { get; }
     Task AddSheetToWorkbook(XLWorkbook xLWorkbook);
 }
 
-internal class IXlsxWrapper : IXlsxSheet
-{
-    private readonly Func<XLWorkbook, Task> _action;
-
-    public IXlsxWrapper(Func<XLWorkbook, Task> action)
-    {
-        _action = action;
-    }
-
-    public async Task AddSheetToWorkbook(XLWorkbook xLWorkbook)
-    {
-        await _action(xLWorkbook);
-    }
-}

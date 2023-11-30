@@ -1,0 +1,106 @@
+@using ClosedXML.Excel;
+@using RtuTc.BlazorXlsxExport.Options;
+@typeparam TItem
+
+@implements IDisposable
+@implements IOnSheetContent
+
+@if (ChildContent is not null && Sheet is not null)
+{
+    <CascadingValue Value="this">
+        @ChildContent
+    </CascadingValue>
+}
+@code {
+    [Parameter, EditorRequired]
+    public IEnumerable<TItem>? Data { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+    [Parameter]
+    public ContentDirection Next {get; set; }
+
+    [CascadingParameter]
+    public XlsxSheet? Sheet { get; set; }
+
+
+    private List<XlsxColumn<TItem>> columns = new();
+
+    private TimeSpan Delay => Sheet?.Delay ?? TimeSpan.FromMilliseconds(10);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        if (Sheet is null)
+        {
+            throw new InvalidOperationException($"{nameof(XlsxDataTable<TItem>)} can be used only in child content of {nameof(XlsxSheet)}");
+        }
+        Sheet?.AddContent(this);
+    }
+
+    async Task<(int rowIndex, int columnIndex)> IOnSheetContent.RenderContent(IXLWorksheet worksheet, int rowIndexStart, int columnIndexStart)
+    {
+        if (Data is null)
+        {
+            throw new ArgumentNullException(nameof(Data), "Data is required to generate file");
+        }
+        var columnIndex = columnIndexStart;
+        var rowIndex = rowIndexStart;
+        foreach (var column in columns)
+        {
+            var headerCell = worksheet.Cell(rowIndex, columnIndex++);
+            headerCell.SetValue(column.Title);
+            var comment = column.TitleComment;
+            if (comment is not null)
+            {
+                headerCell.CreateComment().AddText(comment);
+            }
+        }
+        rowIndex++;
+        columnIndex = columnIndexStart;
+        foreach (var row in Data)
+        {
+            foreach (var column in columns)
+            {
+                var cell = worksheet.Cell(rowIndex, columnIndex++);
+                cell.SetValue(column.Value?.Invoke(row));
+            }
+            await Task.Delay(Delay);
+            columnIndex = columnIndexStart;
+            rowIndex++;
+        }
+        await Task.Delay(Delay);
+        switch (Next)
+        {
+            case ContentDirection.BottomLeftDown:
+                return (rowIndex, columnIndex);
+            default:
+                throw new ArgumentException($"Incorrect value {Next}", nameof(Next));
+        }
+    }
+
+    internal void AddColumn(XlsxColumn<TItem> column)
+    {
+        columns.Add(column);
+    }
+    internal void RemoveColumn(XlsxColumn<TItem> column)
+    {
+        columns.Remove(column);
+    }
+
+    public void Dispose()
+    {
+        Sheet?.RemoveContent(this);
+    }
+    public enum ContentDirection
+    {
+        /// <summary>
+        /// -----
+        /// -...-
+        /// -...-
+        /// -...-
+        /// -+---
+        /// </summary>
+        BottomLeftDown,
+    }
+}

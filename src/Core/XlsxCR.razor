@@ -1,0 +1,36 @@
+@using ClosedXML.Excel
+
+@implements IDisposable
+@implements IOnSheetContent
+
+@code {
+    [Parameter]
+    public int Column { get; set; } = 1;
+
+    [CascadingParameter]
+    public XlsxSheet? Sheet { get; set; }
+    [CascadingParameter]
+    internal ReportProgressCounter? ReportProgressCounter { get; set; }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Sheet?.AddContent(this);
+        ReportProgressCounter?.AddNewElement();
+    }
+
+    Task<(int rowIndex, int columnIndex)> IOnSheetContent.RenderContent(IXLWorksheet worksheet, int rowIndexStart, int columnIndexStart)
+    {
+        if (Sheet is null)
+        {
+            throw new InvalidOperationException($"{nameof(XlsxRichTextCell)} can be used only in child content of {nameof(XlsxSheet)}");
+        }
+        ReportProgressCounter?.ElementDone();
+        return Task.FromResult((rowIndexStart, Math.Max(Column, 1)));
+    }
+
+    public void Dispose()
+    {
+        Sheet?.RemoveContent(this);
+        ReportProgressCounter?.RemoveElement();
+    }
+}

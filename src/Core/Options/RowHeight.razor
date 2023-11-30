@@ -3,12 +3,13 @@
 @inherits XlsxSheetOption
 
 @code {
-
     [Parameter, EditorRequired]
-    public int ColumnsCount { get; set; }
+    public int Row { get; set; }
+    [Parameter, EditorRequired]
+    public double Height { get; set; }
 
     internal override void ApplyOption(IXLWorksheet worksheet)
     {
-        worksheet.SheetView.FreezeColumns(ColumnsCount);
+        worksheet.Row(Row).Height = Height;
     }
 }

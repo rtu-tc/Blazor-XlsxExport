@@ -1,0 +1,16 @@
+@using ClosedXML.Excel
+
+@inherits XlsxCellBase
+
+@code {
+    [Parameter]
+    public object? Value { get; set; }
+
+
+    protected override ValueTask PlaceCellContent(IXLCell cell)
+    {
+        cell.SetValue(XLCellValue.FromObject(Value));
+        return ValueTask.CompletedTask;
+    }
+
+}

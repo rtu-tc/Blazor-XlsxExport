@@ -5,7 +5,7 @@
 
 @code {
     [CascadingParameter]
-    public XlsxSheet<TItem>? Sheet { get; set; }
+    public XlsxDataTable<TItem>? Sheet { get; set; }
 
     /// <summary>
     /// Header cell
@@ -29,7 +29,7 @@
         base.OnInitialized();
         if (Sheet is null)
         {
-            throw new InvalidOperationException($"{nameof(XlsxColumn<TItem>)} can be used only in child content of {nameof(XlsxSheet<TItem>)}");
+            throw new InvalidOperationException($"{nameof(XlsxColumn<TItem>)} can be used only in child content of {nameof(XlsxDataTable<TItem>)}");
         }
         Sheet.AddColumn(this);
     }

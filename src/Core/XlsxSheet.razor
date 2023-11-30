@@ -1,8 +1,8 @@
 ﻿@using ClosedXML.Excel;
 @using RtuTc.BlazorXlsxExport.Options;
-@typeparam TItem
 
 @implements IDisposable
+@implements IXlsxSheet
 
 @if (ChildContent is not null && Table is not null)
 {
@@ -12,68 +12,40 @@
 }
 @code {
     [Parameter, EditorRequired]
-    public IEnumerable<TItem>? Data { get; set; }
-    [Parameter, EditorRequired]
     public string Name { get; set; } = "data";
+    string IXlsxSheet.Name => Name;
+
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
-    
+
     [CascadingParameter]
     public XlsxTable? Table { get; set; }
 
-    private List<XlsxColumn<TItem>> columns = new();
-    private List<XlsxSheetOption<TItem>> options = new();
+    private List<IOnSheetContent> onSheetContents = new();
+    private List<XlsxSheetOption> options = new();
 
-    private IXlsxWrapper wrapper;
-
-    private TimeSpan Delay => Table?.Delay ?? TimeSpan.FromMilliseconds(10);
-
-    public XlsxSheet()
-    {
-        wrapper = new IXlsxWrapper(this.AddSheetToWorkbook);
-    }
+    internal TimeSpan Delay => Table?.Delay ?? TimeSpan.FromMilliseconds(10);
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
         if (Table is null)
         {
-            throw new InvalidOperationException($"{nameof(XlsxSheet<TItem>)} can be used only in child content of {nameof(XlsxTable)}");
+            throw new InvalidOperationException($"{nameof(XlsxSheet)} can be used only in child content of {nameof(XlsxTable)}");
         }
-        Table?.AddSheet(wrapper);
+        Table?.AddSheet(this);
     }
 
-    internal async Task AddSheetToWorkbook(XLWorkbook workbook)
+    async Task IXlsxSheet.AddSheetToWorkbook(XLWorkbook workbook)
     {
-        if (Data is null)
-        {
-            throw new ArgumentNullException(nameof(Data), "Data is required to generate file");
-        }
         var sheet = workbook.Worksheets.Add(XLHelper.CreateSafeSheetName(Name));
-        var columnIndex = 1;
         var rowIndex = 1;
-        foreach (var column in columns)
+        var columnIndex = 1;
+
+        foreach (var content in onSheetContents)
         {
-            var headerCell = sheet.Cell(rowIndex, columnIndex++);
-            headerCell.SetValue(column.Title);
-            var comment = column.TitleComment;
-            if (comment is not null)
-            {
-                headerCell.CreateComment().AddText(comment);
-            }
-        }
-        rowIndex++;
-        columnIndex = 1;
-        foreach (var row in Data)
-        {
-            foreach (var column in columns)
-            {
-                var cell = sheet.Cell(rowIndex, columnIndex++);
-                cell.SetValue(column.Value?.Invoke(row));
-            }
+            (rowIndex, columnIndex) = await content.RenderContent(sheet, rowIndex, columnIndex);
             await Task.Delay(Delay);
-            columnIndex = 1;
-            rowIndex++;
         }
         await Task.Delay(Delay);
 
@@ -83,25 +55,25 @@
         }
     }
 
-    internal void AddColumn(XlsxColumn<TItem> column)
+    internal void AddContent(IOnSheetContent column)
     {
-        columns.Add(column);
+        onSheetContents.Add(column);
     }
-    internal void RemoveColumn(XlsxColumn<TItem> column)
+    internal void RemoveContent(IOnSheetContent column)
     {
-        columns.Remove(column);
+        onSheetContents.Remove(column);
     }
-    internal void AddOption(XlsxSheetOption<TItem> option)
+    internal void AddOption(XlsxSheetOption option)
     {
         options.Add(option);
     }
-    internal void RemoveOption(XlsxSheetOption<TItem> option)
+    internal void RemoveOption(XlsxSheetOption option)
     {
         options.Remove(option);
     }
 
     public void Dispose()
     {
-        Table?.RemoveSheet(wrapper);
+        Table?.RemoveSheet(this);
     }
 }
