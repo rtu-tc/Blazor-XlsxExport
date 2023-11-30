@@ -21,6 +21,8 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
     [Parameter]
     public bool Bold { get; set; }
     [Parameter]
+    public bool Italic { get; set; }
+    [Parameter]
     public double FontSize { get; set; } = 11;
 
     [Parameter]
@@ -31,6 +33,9 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
 
     [Parameter]
     public bool WrapText { get; set; }
+
+    [Parameter]
+    public int TextRotation { get; set; }
 
     [CascadingParameter]
     public XlsxSheet? Sheet { get; set; }
@@ -56,10 +61,12 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
 
         cell.Style
             .Font.SetBold(Bold)
+            .Font.SetItalic(Italic)
             .Font.SetFontSize(FontSize)
             .Alignment.SetHorizontal(HorizontalAlign)
             .Alignment.SetVertical(VerticalAlign)
             .Alignment.SetWrapText(WrapText)
+            .Alignment.SetTextRotation(TextRotation)
             ;
 
         await PlaceCellContent(cell);

@@ -11,6 +11,12 @@
     [Parameter]
     public XLColor? FontColor { get; set; } = XLColor.Black;
     [Parameter]
+    public double FontSize { get; set; } = 11;
+    [Parameter]
+    public bool Bold { get; set; }
+    [Parameter]
+    public bool Italic { get; set; }
+    [Parameter]
     public bool NoNewLine { get; set; }
 
     [CascadingParameter]
@@ -27,7 +33,10 @@
     {
         if (Value is not null)
         {
-            var text = richStrings.AddText(Value);
+            var text = richStrings.AddText(Value)
+                .SetBold(Bold)
+                .SetItalic(Italic)
+                .SetFontSize(FontSize);
             if (FontColor is not null)
             {
                 text.SetFontColor(FontColor);
