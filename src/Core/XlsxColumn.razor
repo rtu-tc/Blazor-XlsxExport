@@ -24,14 +24,13 @@
     [Parameter]
     public Func<TItem, string>? Value { get; set; }
 
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        base.OnInitialized();
-        if (Sheet is null)
+        base.OnAfterRender(firstRender);
+        if (firstRender)
         {
-            throw new InvalidOperationException($"{nameof(XlsxColumn<TItem>)} can be used only in child content of {nameof(XlsxDataTable<TItem>)}");
+            Sheet?.AddColumn(this);
         }
-        Sheet.AddColumn(this);
     }
 
     public void Dispose()

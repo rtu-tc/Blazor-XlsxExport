@@ -1,0 +1,15 @@
+﻿@using ClosedXML.Excel;
+
+@inherits XlsxSheetOption
+
+@code {
+    [Parameter, EditorRequired]
+    public int Column { get; set; }
+    [Parameter, EditorRequired]
+    public double Width { get; set; }
+
+    internal override void ApplyOption(IXLWorksheet worksheet)
+    {
+        worksheet.Column(Column).Width = Width;
+    }
+}

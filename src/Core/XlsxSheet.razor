@@ -26,14 +26,13 @@
 
     internal TimeSpan Delay => Table?.Delay ?? TimeSpan.FromMilliseconds(10);
 
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        base.OnInitialized();
-        if (Table is null)
+        base.OnAfterRender(firstRender);
+        if (firstRender)
         {
-            throw new InvalidOperationException($"{nameof(XlsxSheet)} can be used only in child content of {nameof(XlsxTable)}");
+            Table?.AddSheet(this);
         }
-        Table?.AddSheet(this);
     }
 
     async Task IXlsxSheet.AddSheetToWorkbook(XLWorkbook workbook)

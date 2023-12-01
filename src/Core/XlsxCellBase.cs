@@ -26,6 +26,9 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
     public double FontSize { get; set; } = 11;
 
     [Parameter]
+    public XLColor? BackgroundColor { get; set; }
+
+    [Parameter]
     public XLAlignmentHorizontalValues HorizontalAlign { get; set; } = XLAlignmentHorizontalValues.Left;
 
     [Parameter]
@@ -36,6 +39,15 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
 
     [Parameter]
     public int TextRotation { get; set; }
+
+    [Parameter]
+    public XLBorderStyleValues BorderLeft { get; set; } = XLBorderStyleValues.None;
+    [Parameter]
+    public XLBorderStyleValues BorderTop { get; set; } = XLBorderStyleValues.None;
+    [Parameter]
+    public XLBorderStyleValues BorderRight { get; set; } = XLBorderStyleValues.None;
+    [Parameter]
+    public XLBorderStyleValues BorderBottom { get; set; } = XLBorderStyleValues.None;
 
     [CascadingParameter]
     public XlsxSheet? Sheet { get; set; }
@@ -52,14 +64,16 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
             throw new InvalidOperationException($"{nameof(XlsxRichTextCell)} can be used only in child content of {nameof(XlsxSheet)}");
         }
 
+        var cell = worksheet.Cell(rowIndexStart, columnIndexStart);
+        var cellRange = cell.AsRange();
+
         if (MergeRight > 1 || MergeDown > 1)
         {
-            worksheet.Range(rowIndexStart, columnIndexStart, rowIndexStart + MergeDownOffset, columnIndexStart + MergeRightOffset).Merge();
+            cellRange = worksheet.Range(rowIndexStart, columnIndexStart, rowIndexStart + MergeDownOffset, columnIndexStart + MergeRightOffset).Merge();
         }
 
-        var cell = worksheet.Cell(rowIndexStart, columnIndexStart);
 
-        cell.Style
+        cellRange.Style
             .Font.SetBold(Bold)
             .Font.SetItalic(Italic)
             .Font.SetFontSize(FontSize)
@@ -67,24 +81,36 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
             .Alignment.SetVertical(VerticalAlign)
             .Alignment.SetWrapText(WrapText)
             .Alignment.SetTextRotation(TextRotation)
+            .Border.SetLeftBorder(BorderLeft)
+            .Border.SetTopBorder(BorderTop)
+            .Border.SetRightBorder(BorderRight)
+            .Border.SetBottomBorder(BorderBottom)
+            .Fill.SetBackgroundColor(BackgroundColor ?? XLColor.NoColor)
             ;
 
         await PlaceCellContent(cell);
         ReportProgressCounter?.ElementDone();
         return Next switch
         {
+            ContentDirection.No => (rowIndexStart, columnIndexStart),
             ContentDirection.Down => (rowIndexStart + 1 + MergeDownOffset, columnIndexStart),
             ContentDirection.Right => (rowIndexStart, columnIndexStart + 1 + MergeRightOffset),
             _ => throw new ArgumentException($"Incorrect value {Next}", nameof(Next))
         };
     }
 
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            Sheet?.AddContent(this);
+        }
+    }
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        Sheet?.AddContent(this);
         ReportProgressCounter?.AddNewElement();
-
     }
 
     public void Dispose()
@@ -98,6 +124,12 @@ public abstract class XlsxCellBase : ComponentBase, IOnSheetContent, IDisposable
 
     public enum ContentDirection
     {
+        /// <summary>
+        /// ---
+        /// -+-
+        /// ---
+        /// </summary>
+        No,
         /// <summary>
         /// ---
         /// -.-

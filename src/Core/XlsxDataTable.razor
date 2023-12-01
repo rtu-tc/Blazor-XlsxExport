@@ -28,14 +28,13 @@
 
     private TimeSpan Delay => Sheet?.Delay ?? TimeSpan.FromMilliseconds(10);
 
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        base.OnInitialized();
-        if (Sheet is null)
+        base.OnAfterRender(firstRender);
+        if (firstRender)
         {
-            throw new InvalidOperationException($"{nameof(XlsxDataTable<TItem>)} can be used only in child content of {nameof(XlsxSheet)}");
+            Sheet?.AddContent(this);
         }
-        Sheet?.AddContent(this);
     }
 
     async Task<(int rowIndex, int columnIndex)> IOnSheetContent.RenderContent(IXLWorksheet worksheet, int rowIndexStart, int columnIndexStart)

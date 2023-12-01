@@ -22,11 +22,13 @@
     [CascadingParameter]
     public XlsxRichTextCell? Cell { get; set; }
 
-
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        base.OnInitialized();
-        Cell?.AddReachText(this);
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            Cell?.AddReachText(this);
+        }
     }
 
     void IXlsxRichText.ApplyReachText(IXLRichText richStrings)

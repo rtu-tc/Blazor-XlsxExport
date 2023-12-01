@@ -11,10 +11,18 @@
     public XlsxSheet? Sheet { get; set; }
     [CascadingParameter]
     internal ReportProgressCounter? ReportProgressCounter { get; set; }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        if (firstRender)
+        {
+            Sheet?.AddContent(this);
+        }
+    }
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        Sheet?.AddContent(this);
         ReportProgressCounter?.AddNewElement();
     }
 
